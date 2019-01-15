@@ -8,22 +8,23 @@
 package routers
 
 import (
-	"Pandora/controllers"
+	"Pandora/controllers/user"
 	"github.com/astaxie/beego"
 )
 
 func init() {
-	ns := beego.NewNamespace("/v1",
-		beego.NSNamespace("/object",
-			beego.NSInclude(
-				&controllers.ObjectController{},
+	ns :=
+		beego.NewNamespace("/api",
+		//beego.NSNamespace("/object",
+		//	beego.NSInclude(
+		//		&controllers.ObjectController{},
+		//	),
+		//),
+			beego.NSNamespace("/user",
+				beego.NSInclude(
+					&user.UserController{},
+				),
 			),
-		),
-		beego.NSNamespace("/user",
-			beego.NSInclude(
-				&controllers.UserController{},
-			),
-		),
 	)
 	beego.AddNamespace(ns)
 }
