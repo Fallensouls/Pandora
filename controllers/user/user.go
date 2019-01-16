@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/validation"
+	"regexp"
 	"strconv"
 )
 
@@ -21,26 +22,41 @@ type UserController struct {
 // @Failure 403 body is empty
 // @router / [post]
 func (this *UserController) addUser() {
-	var user User
+	username := this.GetString("username")
+	password := this.GetString("password")
+	email := this.GetString("email")
+	tel := this.GetString("telphone")
+
+	user := User{Username:username, Password:password, Email:email, Telphone:tel}
+	by := ""
+
 	valid := validation.Validation{}
-	if err := json.Unmarshal(this.Ctx.Input.RequestBody, &user); err != nil{
-		logs.Error(err)
-		this.Abort("500")
+	reg1 := regexp.MustCompile("^[a-zA-Z0-9_]{4,16}$")
+	reg2 := regexp.MustCompile("^[a-zA-Z0-9]{8,16}$")
+	valid.Match(user.Username, reg1, "username").Message("用户名只能包括数字、字母以及下划线，且在4-16位之间")
+	valid.Match(user.Password, reg2, "password").Message("密码只能包括数字、字母，且在8-16位之间")
+	if user.Email != ""{
+		valid.Email(user.Email,"email")
+		by = "email"
+	}
+	if user.Telphone != ""{
+		valid.Mobile(user.Telphone,"telphone")
+		by = "tel"
 	}
 	b, err := valid.Valid(&user)
 	if err != nil {
 		logs.Error(err)
 		this.Abort("500")
 	}
-	if !b {
+	if !b && user.Telphone == "" && user.Email == ""{
 		// validation does not pass
 		this.Data["json"] = "invalid data"
 		this.Abort("400")  // bad request
 	}
-	if err := AddUser(user, "email"); err != nil{
+	if err := AddUser(user, by); err != nil{
 		logs.Error(err)
+		this.Abort("500")
 	}
-	//this.Data["json"] = map[string]string{"uid": uid}
 	this.ServeJSON()
 }
 
@@ -84,12 +100,18 @@ func (this *UserController) getUser() {
 func (this *UserController) updateUser() {
 	uid := this.GetString(":id")
 	if uid != "" {
-		var profile UserProfile
+		var profile User
 		if err := json.Unmarshal(this.Ctx.Input.RequestBody, &profile); err != nil{
 			logs.Error(err)
 			this.Abort("500")
 		}
+
 		valid := validation.Validation{}
+		valid.Range(profile.Age,0,140,"age").Message("年龄应在0-140之间")
+		valid.MaxSize(profile.Address,100,"address").Message("地址长度最大为100个字符")
+		valid.MaxSize(profile.Description,200,"description").Message("个人说明最大为200个字符")
+		reg := regexp.MustCompile("^[0-2]*$")
+		valid.Match(profile.Gender, reg,"gender")
 		b, err := valid.Valid(&profile)
 		if err != nil {
 			logs.Error(err)
@@ -100,7 +122,8 @@ func (this *UserController) updateUser() {
 			this.Data["json"] = "invalid data"
 			this.Abort("400")  // bad request
 		}
-		if err := UpdateProfile(profile); err != nil{
+
+		if err := UpdateUserProfile(profile); err != nil{
 			logs.Error(err)
 			this.Abort("500")
 		}
