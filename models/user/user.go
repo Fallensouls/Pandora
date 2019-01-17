@@ -2,13 +2,12 @@ package user
 
 import (
 	"errors"
-	"github.com/astaxie/beego/orm"
-	"golang.org/x/crypto/bcrypt"
+	_ "golang.org/x/crypto/bcrypt"
 	"time"
 )
 
 type User struct {
-	Id           int64           `json:"id"            orm:"pk"`
+	Id           int64           `json:"id"`
 	Username     string          `json:"username"`
 	Password     string          `json:"-"`
 	Avatar       string			 `json:"avatar"`
@@ -18,7 +17,7 @@ type User struct {
 	Description  string          `json:"description"`
 	Email        string          `json:"-"`
 	Telphone     string          `json:"-"`
-	Auth         *[]Authority    `json:"-"             orm:"reverse(many)"`     // 用户的角色权限
+	Auth         *[]Authority    `json:"-"`     // 用户的角色权限
 	status       int               // 用户的状态
 	create       time.Time         // 创建用户的时间
 	lastLogin    time.Time         // 记录最后登录的时间
@@ -28,7 +27,7 @@ type User struct {
 type Authority struct {
 	Id			 int
 	Role         string            // 用户的角色
-	User         *[]User          `orm:"rel(m2m)"`
+	User         *[]User
 }
 
 // 定义可能发生的异常
@@ -57,119 +56,116 @@ const(
 	Secret       =   2
 )
 
-func init()  {
-	orm.RegisterModel(new(User), new(Authority))
-}
 
 func GetUser(id int64) (User, error)  {
-	user := User{Id: id}
-	o := orm.NewOrm()
-	err := o.Read(&user)
-	if err == orm.ErrNoRows{
-		return User{}, ErrUserNotFound
-	}
-	if user.status != Normal{   // 不处于正常状态的用户不可查询
-		return User{},ErrUserRestricted
-	}
-	return user, err
+	//user := User{Id: id}
+	//o := orm.NewOrm()
+	//err := o.Read(&user)
+	//if err == orm.ErrNoRows{
+	//	return User{}, ErrUserNotFound
+	//}
+	//if user.status != Normal{   // 不处于正常状态的用户不可查询
+	//	return User{},ErrUserRestricted
+	//}
+	//return user, err
 }
 
 // by表示注册用户的方式,可以通过邮箱或者手机号注册
 func AddUser(user User, by string) error {
-	o := orm.NewOrm()
-	err := SetPassword(&user.Password)
-	if err != nil{
-		return ErrEncodingPassword
-	}
-	user.status = Inactive
-	user.create = time.Now()
-	user.lastLogin = time.Now()
-	user.lastModify = time.Now()
-	created, _, err := o.ReadOrCreate(&user, by)
-	if err == nil{
-		if created {   // 成功创建新用户
-			return nil
-		} else {
-			switch by {
-			case "email":
-				return ErrEmailUsed
-			case "tel":
-				return ErrTelUsed
-			default:
-				return err
-			}
-		}
-	}
-	return err
+	//o := orm.NewOrm()
+	//err := SetPassword(&user.Password)
+	//if err != nil{
+	//	return ErrEncodingPassword
+	//}
+	//user.status = Inactive
+	//user.create = time.Now()
+	//user.lastLogin = time.Now()
+	//user.lastModify = time.Now()
+	//created, _, err := o.ReadOrCreate(&user, by)
+	//if err == nil{
+	//	if created {   // 成功创建新用户
+	//		return nil
+	//	} else {
+	//		switch by {
+	//		case "email":
+	//			return ErrEmailUsed
+	//		case "tel":
+	//			return ErrTelUsed
+	//		default:
+	//			return err
+	//		}
+	//	}
+	//}
+	//return err
 }
 
 // 修改用户的非隐私信息
 func UpdateUserProfile(user User) error {
-	o := orm.NewOrm()
-	if _, err := o.Update(&user,"Avatar","Age","Gender","Address","Description"); err != nil{
-		return err
-	}
-	return nil
+	//o := orm.NewOrm()
+	//if _, err := o.Update(&user,"Avatar","Age","Gender","Address","Description"); err != nil{
+	//	return err
+	//}
+	//return nil
 }
 
 // 特殊字段需要另外提供更改的方法
 func ChangeStatus(id int64, status int) error {
-	o := orm.NewOrm()
-	user := User{Id: id, status: status}
-	if _, err := o.Update(&user, "status"); err != nil{
-		return ErrChangeStatus
-	}
-	return nil
+	//o := orm.NewOrm()
+	//user := User{Id: id, status: status}
+	//if _, err := o.Update(&user, "status"); err != nil{
+	//	return ErrChangeStatus
+	//}
+	//return nil
 }
 
 func SetPassword(password *string) error {  // 利用加密方法生成加密的密码
-	hash, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
-	if err != nil{
-		return err
-	}
-	*password = string(hash)
-	return nil
+	//hash, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+	//if err != nil{
+	//	return err
+	//}
+	//*password = string(hash)
+	//return nil
 }
 
 func ChangePassword(id int64, old string, new string) error {  // 利用旧密码来修改密码
-	o := orm.NewOrm()
-	user := User{Id: id}
-	if err := o.Read(&user); err != nil{
-		if err == orm.ErrNoRows{
-			return ErrUserNotFound
-		}
-		return err
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(old), []byte(user.Password)); err != nil{
-		return ErrWrongPassword
-	}
-	err := SetPassword(&user.Password)
-	if err != nil{
-		return ErrEncodingPassword
-	}
-	user.lastModify = time.Now()
-	if _, err := o.Update(&user, "password", "lastModify"); err != nil{
-		return err
-	}
-	return nil
+	//o := orm.NewOrm()
+	//user := User{Id: id}
+	//if err := o.Read(&user); err != nil{
+	//	if err == orm.ErrNoRows{
+	//		return ErrUserNotFound
+	//	}
+	//	return err
+	//}
+	//if err := bcrypt.CompareHashAndPassword([]byte(old), []byte(user.Password)); err != nil{
+	//	return ErrWrongPassword
+	//}
+	//err := SetPassword(&user.Password)
+	//if err != nil{
+	//	return ErrEncodingPassword
+	//}
+	//user.lastModify = time.Now()
+	//if _, err := o.Update(&user, "password", "lastModify"); err != nil{
+	//	return err
+	//}
+	//return nil
 }
 
 func ChangeEmail(id int64, email string) error {
-	o := orm.NewOrm()
-	user := User{Id: id, Email: email}
-	if _, err := o.Update(&user, "Email"); err != nil{
-		return err
-	}
-	return nil
+	//o := orm.NewOrm()
+	//user := User{Id: id, Email: email}
+	//if _, err := o.Update(&user, "Email"); err != nil{
+	//	return err
+	//}
+	//return nil
 }
 
 func ChangeTel(id int64, tel string) error {
-	o := orm.NewOrm()
-	user := User{Id: id, Telphone: tel}
-	if _, err := o.Update(&user, "Telphone"); err != nil{
-		return err
-	}
-	return nil
+	//o := orm.NewOrm()
+	//user := User{Id: id, Telphone: tel}
+	//if _, err := o.Update(&user, "Telphone"); err != nil{
+	//	return err
+	//}
+	//return nil
 }
 
 
