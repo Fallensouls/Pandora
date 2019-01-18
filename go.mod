@@ -7,7 +7,7 @@ replace (
 
 require (
 	github.com/gin-contrib/sse v0.0.0-20170109093832-22d885f9ecc7 // indirect
-	github.com/gin-gonic/gin v1.3.0 // indirect
+	github.com/gin-gonic/gin v1.3.0
 	github.com/go-ini/ini v1.41.0
 	github.com/golang/protobuf v1.2.0 // indirectgo
 	github.com/jinzhu/gorm v1.9.2 // indirect

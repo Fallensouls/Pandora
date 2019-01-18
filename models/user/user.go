@@ -1,13 +1,14 @@
 package user
 
 import (
+	"Pandora/models"
 	"errors"
 	_ "golang.org/x/crypto/bcrypt"
 	"time"
 )
 
 type User struct {
-	Id           int64           `json:"id"`
+	models.BaseModel
 	Username     string          `json:"username"`
 	Password     string          `json:"-"`
 	Avatar       string			 `json:"avatar"`
@@ -18,14 +19,13 @@ type User struct {
 	Email        string          `json:"-"`
 	Telphone     string          `json:"-"`
 	Auth         *[]Authority    `json:"-"`     // 用户的角色权限
-	status       int               // 用户的状态
-	create       time.Time         // 创建用户的时间
-	lastLogin    time.Time         // 记录最后登录的时间
-	lastModify   time.Time         // 记录上次修改密码的时间
+	Status       int             `json:"-"`     // 用户的状态
+	LastLogin    time.Time       `json:"-"`     // 记录最后登录的时间
+	LastModify   time.Time       `json:"-"`     // 记录上次修改密码的时间
 }
 
 type Authority struct {
-	Id			 int
+	models.BaseModel
 	Role         string            // 用户的角色
 	User         *[]User
 }
