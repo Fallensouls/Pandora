@@ -2,10 +2,6 @@ package date
 
 import "time"
 
-type JsonTime time.Time
-
-//func (this *JsonTime) GetStandardTime()  {
-//	format := "2006-01-02 15:04:05"
-//
-//
-//}
+func GetStandardTime() time.Time {
+	return time.Unix(time.Now().Unix(), 0)
+}

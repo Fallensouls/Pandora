@@ -1,9 +1,11 @@
 package routers
 
 import (
+	"Pandora/controller"
 	"github.com/gin-gonic/gin"
 	"github.com/go-ini/ini"
 	"log"
+	"net/http"
 	"time"
 )
 
@@ -32,5 +34,21 @@ func SetRouter() (r *gin.Engine, config ServerConfig)  {
 	r.Use(gin.Recovery())
 	gin.SetMode(config.RunMode)
 
+	test := r.Group("/test")
+	{
+		test.GET("", func(c *gin.Context) {
+			c.String(http.StatusOK, "hello world")
+		})
+	}
+
+	user := r.Group("/user")
+	{
+		user.POST("/register", controller.Register)
+		user.POST("/login", controller.Login)
+		user.GET("/:id", controller.GetProfile)
+		user.PUT("/:id", controller.UpdateProfile)
+	}
+
 	return
 }
+
