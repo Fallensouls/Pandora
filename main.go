@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Pandora/routers"
+	"github.com/Fallensouls/Pandora/routers"
 	"net/http"
 	"time"
 )
@@ -11,7 +11,7 @@ func main() {
 	s := &http.Server{
 		Addr:           ":" + config.Port,
 		Handler:        router,
-		ReadTimeout:    config.ReadTimeout  * time.Second,
+		ReadTimeout:    config.ReadTimeout * time.Second,
 		WriteTimeout:   config.WriteTimeout * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}

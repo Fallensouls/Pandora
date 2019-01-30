@@ -1,4 +1,4 @@
-module Pandora
+module github.com/Fallensouls/Pandora
 
 replace (
 	golang.org/x/crypto v0.0.0-20181127143415-eb0de9b17e85 => github.com/golang/crypto v0.0.0-20181127143415-eb0de9b17e85
