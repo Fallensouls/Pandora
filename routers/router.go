@@ -1,11 +1,11 @@
 package routers
 
 import (
-	"github.com/Fallensouls/Pandora/controller"
+	"github.com/Fallensouls/Pandora/api"
+	"github.com/Fallensouls/Pandora/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-ini/ini"
 	"log"
-	"net/http"
 	"time"
 )
 
@@ -16,37 +16,39 @@ type ServerConfig struct {
 	WriteTimeout time.Duration `ini:"write_timeout"`
 }
 
-func setServerConfig(c *ServerConfig) {
+var Server = &ServerConfig{}
+
+func init() {
 	cfg, err := ini.Load("conf/app.ini")
 	if err != nil {
 		log.Panic("fail to load config file")
 	}
-	if err = cfg.Section("server").MapTo(c); err != nil {
+	if err = cfg.Section("server").MapTo(Server); err != nil {
+		log.Println(err)
 		log.Panic("fail to set server config")
 	}
-	c.RunMode = cfg.Section("").Key("run_mode").String()
+	Server.RunMode = cfg.Section("").Key("run_mode").String()
 }
 
-func SetRouter() (r *gin.Engine, config ServerConfig) {
-	setServerConfig(&config)
+func SetRouter() (r *gin.Engine) {
 	r = gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	gin.SetMode(config.RunMode)
+	gin.SetMode(Server.RunMode)
 
-	test := r.Group("/test")
+	root := r.Group("")
+	root.Use(middleware.Errhandler())
 	{
-		test.GET("", func(c *gin.Context) {
-			c.String(http.StatusOK, "hello world")
-		})
+		root.POST("/register", api.Register)
+		root.POST("/login", api.Login)
 	}
 
-	user := r.Group("/user")
+	Api := r.Group("/api")
+	Api.Use(middleware.IdValidator())
+	Api.Use(middleware.Errhandler())
 	{
-		user.POST("/register", controller.Register)
-		user.POST("/login", controller.Login)
-		user.GET("/:id", controller.GetProfile)
-		user.PUT("/:id", controller.UpdateProfile)
+		Api.GET("/user/:id", api.GetProfile)
+		Api.PUT("/user/:id", api.UpdateProfile)
 	}
 
 	return

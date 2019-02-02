@@ -1,49 +1,36 @@
 package models
 
 import (
-	"errors"
-	"github.com/Fallensouls/Pandora/util/date"
-	"github.com/Fallensouls/Pandora/util/validation"
-	"github.com/jinzhu/gorm"
+	. "github.com/Fallensouls/Pandora/errs"
+	. "github.com/Fallensouls/Pandora/util/json_util"
+	. "github.com/Fallensouls/Pandora/util/validate"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
-	"time"
 )
 
 type User struct {
-	BasicModel
-	Username    string       `json:"username"`
-	Password    string       `json:"password,omitempty"`
-	Avatar      *uuid.UUID   `json:"avatar,omitempty"`
-	Age         int          `json:"age,omitempty"`
-	Gender      int          `json:"gender,omitempty"`
-	Address     string       `json:"address,omitempty"`
-	Description string       `json:"description,omitempty"`
-	Email       string       `json:"email,omitempty"`
-	Cellphone   string       `json:"cellphone,omitempty"`
-	Auth        *[]Authority `json:"-"`
-	Status      int          `json:"-"`
-	LastLogin   time.Time    `json:"-"         gorm:"column:lastlogin"`
-	LastModify  time.Time    `json:"-"         gorm:"column:lastmodify"`
+	BasicModel  `xorm:"extends"`
+	Username    string      `json:"username"`
+	Password    string      `json:"password,omitempty"`
+	Avatar      *uuid.UUID  `json:"avatar,omitempty"`
+	Age         int         `json:"age,omitempty"`
+	Gender      int         `json:"gender,omitempty"`
+	Address     string      `json:"address,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Email       *string     `json:"email,omitempty"`
+	Cellphone   *string     `json:"cellphone,omitempty"`
+	Auth        []Authority `json:"-" xorm:"extends"`
+	Status      int         `json:"-"`
+	LastLogin   JsonTime    `json:"-"`
+	LastModify  JsonTime    `json:"-"`
 }
 
 type Authority struct {
-	BasicModel
-	Role string
-	User *[]User
+	BasicModel `xorm:"extends"`
+	Role       string
+	User       []User `xorm:"extends"`
 }
-
-// Define possible errors may happen
-var (
-	ErrUserNotFound     = errors.New("the user does not exist")
-	ErrUserAbnormal     = errors.New("the user is under abnormal mode")
-	ErrWrongPassword    = errors.New("the password is wrong")
-	ErrEncodingPassword = errors.New("fail to encode the password")
-	ErrEmailUsed        = errors.New("the email address has already been used")
-	ErrCellphoneUsed    = errors.New("the cellphone number has already been used")
-	ErrChangeStatus     = errors.New("fail to change status")
-)
 
 // Define user's status
 const (
@@ -60,154 +47,174 @@ const (
 	Female  = 2
 )
 
-// Password, email address and cellphone number won't return to frontend
-func GetUser(id int64) (user User, err error) {
-	if err = db.Find(&user, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+// TableName specifies the table name of struct User
+func (u *User) TableName() string {
+	return "users"
+}
+
+// GetUser will return user's information.
+// Note that password, email address and cellphone number won't return
+func (u *User) GetUser(id int64) (err error) {
+	var exist bool
+	if exist, err = engine.ID(id).Omit("password", "email", "cellphone").Get(u); err != nil {
+		return
+	} else {
+		if !exist {
 			err = ErrUserNotFound
 			return
 		}
 	}
-	if user.Status == Inactive || user.Status == Banned {
-		err = ErrUserAbnormal
-		return
+	switch u.Status {
+	case Inactive:
+		err = ErrUserInactive
+	case Restricted:
+		err = ErrUserRestricted
+	case Banned:
+		err = ErrUserBanned
+	default:
+		break
 	}
-	user.Password = ""
-	user.Email = ""
-	user.Cellphone = ""
 	return
 }
 
-// by represents sign up by email address or cellphone number
-func AddUser(user User, by string) (err error) {
-	err = SetPassword(&user.Password)
+// AddUser will add a new user.
+// user can sign up by email address or cellphone number
+func (u *User) AddUser() (err error) {
+	err = encodePassword(&u.Password)
 	if err != nil {
-		return ErrEncodingPassword
+		return
 	}
-	if err = db.Create(&user).Error; err != nil {
-		if strings.Contains(err.Error(), by) {
-			switch by {
-			case "email":
-				return ErrEmailUsed
-			case "cellphone":
-				return ErrCellphoneUsed
-			default:
-				return
-			}
+	if _, err = engine.Insert(u); err != nil {
+		if strings.Contains(err.Error(), "email") {
+			return ErrEmailUsed
+		} else if strings.Contains(err.Error(), "cellphone") {
+			return ErrCellphoneUsed
+		} else {
+			return
 		}
 	}
 	return
 }
 
-// Update user's profile
-func UpdateUserProfile(user User) error {
-	if err := db.Model(&user).Select("avatar,age,gender,address,description").
-		Updates(user).Error; err != nil {
+// UpdateUserProfile will update user's profile
+func (u *User) UpdateUserProfile(id int64) error {
+	if _, err := engine.ID(id).Cols("avatar", "age", "gender", "address", "description").
+		Update(u); err != nil {
 		return err
 	}
 	return nil
 }
 
-// Encode password with bcrypt
-func SetPassword(password *string) error {
+// CheckPassword compare user's password and password stored in database
+func (u *User) CheckPassword() error {
+	pw := u.Password
+	u.Password = ""
+	if exist, err := engine.Cols("id", "password", "status").Get(u); err != nil {
+		return err
+	} else {
+		if !exist {
+			return ErrUserNotFound
+		}
+	}
+	switch u.Status {
+	case Inactive:
+		return ErrUserInactive
+	case Banned:
+		return ErrUserBanned
+	default:
+		break
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pw)); err != nil {
+		return ErrWrongPassword
+	}
+	var loginTime JsonTime
+	loginTime.GetJsonTime()
+	if _, err := engine.ID(u.Id).Cols("last_login").
+		Update(&User{LastLogin: loginTime}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *User) ChangeEmail(id int64) error {
+	if _, err := engine.ID(id).Cols("email").Update(u); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *User) ChangeCellphone(id int64) error {
+	if _, err := engine.ID(id).Cols("cellphone").Update(u); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateUserInfo validates whether user's information is valid
+func (u *User) ValidateUserInfo() (err error) {
+	if u.Email == nil && u.Cellphone == nil {
+		return ErrInfoRequired
+	}
+	if err = ValidateUsername(u.Username); err != nil {
+		return ErrInvalidData
+	}
+	if err = ValidatePassword(u.Password); err != nil {
+		return ErrInvalidData
+	}
+	if u.Email != nil {
+		if err = ValidateEmail(*u.Email); err != nil {
+			return ErrInvalidData
+		}
+	}
+	if u.Cellphone != nil {
+		if err = ValidateCellphone(*u.Cellphone); err != nil {
+			return ErrInvalidData
+		}
+	}
+	return
+}
+
+// encodePassword will encode password with bcrypt
+func encodePassword(password *string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return ErrEncodingPassword
 	}
 	*password = string(hash)
 	return nil
 }
 
 func ChangePassword(id int64, old string, new string) error {
-	user, err := GetUser(id)
-	if err != nil {
+	var user User
+	if err := user.GetUser(id); err != nil {
 		return err
 	}
-	if err = bcrypt.CompareHashAndPassword([]byte(old), []byte(user.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(old), []byte(user.Password)); err != nil {
 		return ErrWrongPassword
 	}
-	err = SetPassword(&user.Password)
-	if err != nil {
+	if err := encodePassword(&user.Password); err != nil {
 		return ErrEncodingPassword
 	}
-	user.LastModify = date.GetStandardTime()
-	if err = db.Model(&user).Select("password, lastmodify").Updates(user).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-// compare user's password and password stored in database
-func ComparePassword(user User) error {
-	pw := user.Password
-	if err := db.Select("password, status").Find(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return ErrUserNotFound
-		}
-		if user.Status == Inactive || user.Status == Banned {
-			return ErrUserAbnormal
-		}
-	}
-	if err := bcrypt.CompareHashAndPassword([]byte(pw), []byte(user.Password)); err != nil {
-		return ErrWrongPassword
-	}
-	return nil
-}
-
-func ChangeEmail(user User) error {
-	//user := User{BasicModel: BasicModel{ID:id}, Email: email}
-	if err := db.Model(&user).Select("email").Updates(user).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func ChangeCellphone(user User) error {
-	//user := User{BasicModel: BasicModel{ID:id}, Cellphone: cell}
-	if err := db.Model(&user).Select("cellphone").Updates(user).Error; err != nil {
+	var modifyTime JsonTime
+	modifyTime.GetJsonTime()
+	if _, err := engine.ID(user.Id).Cols("last_modify").
+		Update(&User{LastModify: modifyTime}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func RestrictUser(id int64) error {
-	return ChangeStatus(id, Restricted)
+	return changeStatus(id, Restricted)
 }
 
 func BanUser(id int64) error {
-	return ChangeStatus(id, Banned)
+	return changeStatus(id, Banned)
 }
 
-func ChangeStatus(id int64, status int) error {
-	user := User{BasicModel: BasicModel{ID: id}, Status: status}
-	if err := db.Model(&user).Select("status").Updates(user).Error; err != nil {
-		return ErrChangeStatus
+func changeStatus(id int64, status int) error {
+	if _, err := engine.ID(id).Cols("status").Update(&User{Status: status}); err != nil {
+		return err
 	}
 	return nil
-}
-
-func (u *User) ValidateUserInfo() (by string, err error) {
-	if u.Email == "" && u.Cellphone == "" {
-		err = errors.New("please provide a valid email address or a cellphone number")
-		return
-	}
-	if err = validation.ValidateUsername(u.Username); err != nil {
-		return
-	}
-	if err = validation.ValidatePassword(u.Password); err != nil {
-		return
-	}
-	if u.Email != "" {
-		by = "email"
-		if err = validation.ValidateEmail(u.Email); err != nil {
-			return
-		}
-	}
-	if u.Cellphone != "" {
-		by = "cellphone"
-		if err = validation.ValidateCellphone(u.Cellphone); err != nil {
-			return
-		}
-	}
-	return
 }

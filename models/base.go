@@ -2,16 +2,16 @@ package models
 
 import (
 	"fmt"
-	"github.com/Fallensouls/Pandora/util/date"
+	. "github.com/Fallensouls/Pandora/util/json_util"
 	"github.com/go-ini/ini"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/go-xorm/core"
+	"github.com/go-xorm/xorm"
+	_ "github.com/lib/pq"
 	"log"
-	"time"
 )
 
 type DatabaseConfig struct {
-	Type     string `ini:"type"`
+	//Type     string `ini:"type"`
 	Name     string `ini:"name"`
 	User     string `ini:"user"`
 	Password string `ini:"password"`
@@ -20,12 +20,12 @@ type DatabaseConfig struct {
 }
 
 type BasicModel struct {
-	ID       int64     `json:"id"`
-	CreateOn time.Time `json:"-"    gorm:"column:createon"`
-	UpdateOn time.Time `json:"-"    gorm:"column:updateon"`
+	Id       int64    `json:"id"`
+	CreateAt JsonTime `json:"-"    xorm:"created"`
+	UpdateAt JsonTime `json:"-"    xorm:"updated"`
 }
 
-var db *gorm.DB
+var engine *xorm.Engine
 
 func init() {
 	cfg, err := ini.Load("conf/app.ini")
@@ -36,7 +36,7 @@ func init() {
 	if err = cfg.Section("database").MapTo(c); err != nil {
 		log.Panic("fail to set database config")
 	}
-	db, err = gorm.Open(c.Type, fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s",
+	engine, err = xorm.NewEngine("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s",
 		c.Host,
 		c.Port,
 		c.User,
@@ -47,32 +47,9 @@ func init() {
 		log.Panic(err)
 	}
 
-	//gorm.DefaultTableNameHandler = func (db *gorm.DB, defaultTableName string) string  {
-	//	return tablePrefix + defaultTableName;
-	//}
+	engine.ShowSQL(true)
+	engine.SetMapper(core.GonicMapper{})
 
-	//db.SingularTable(true)
-	db.DB().SetMaxIdleConns(10)
-	db.DB().SetMaxOpenConns(100)
-
-	db.Callback().Create().Replace("gorm:update_time_stamp", createTimeCallback)
-	db.Callback().Update().Replace("gorm:update_time_stamp", updateTimeCallback)
-}
-
-func CloseDB() {
-	defer db.Close()
-}
-
-func createTimeCallback(scope *gorm.Scope) {
-	if !scope.HasError() {
-		now := date.GetStandardTime()
-		scope.SetColumn("CreateOn", now)
-		scope.SetColumn("UpdateOn", now)
-	}
-}
-
-func updateTimeCallback(scope *gorm.Scope) {
-	if !scope.HasError() {
-		scope.SetColumn("UpdateOn", date.GetStandardTime())
-	}
+	engine.DB().SetMaxIdleConns(10)
+	engine.DB().SetMaxOpenConns(100)
 }
