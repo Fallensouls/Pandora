@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	. "github.com/Fallensouls/Pandora/routers"
+	. "github.com/Fallensouls/Pandora/setting"
 	"log"
 	"net/http"
 	"os"
@@ -13,10 +14,10 @@ import (
 func main() {
 	router := SetRouter()
 	s := &http.Server{
-		Addr:           ":" + Server.Port,
+		Addr:           ":" + ServerCfg.Port,
 		Handler:        router,
-		ReadTimeout:    Server.ReadTimeout * time.Second,
-		WriteTimeout:   Server.WriteTimeout * time.Second,
+		ReadTimeout:    ServerCfg.ReadTimeout * time.Second,
+		WriteTimeout:   ServerCfg.WriteTimeout * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 

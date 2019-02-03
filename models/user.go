@@ -2,8 +2,8 @@ package models
 
 import (
 	. "github.com/Fallensouls/Pandora/errs"
-	. "github.com/Fallensouls/Pandora/util/json_util"
-	. "github.com/Fallensouls/Pandora/util/validate"
+	. "github.com/Fallensouls/Pandora/util/jsonutil"
+	. "github.com/Fallensouls/Pandora/util/validation"
 	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"strings"

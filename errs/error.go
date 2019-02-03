@@ -1,8 +1,8 @@
+// Package errs defines all possible errors may occur in runtime.
 package errs
 
 import "errors"
 
-// Define possible errors may happen
 var (
 	ErrInvalidParam = errors.New("invalid param")
 	ErrInvalidData  = errors.New("invalid data")

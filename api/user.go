@@ -3,9 +3,11 @@ package api
 import (
 	"github.com/Fallensouls/Pandora/errs"
 	"github.com/Fallensouls/Pandora/models"
+	"github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func Register(c *gin.Context) {
@@ -36,8 +38,12 @@ func Login(c *gin.Context) {
 				c.Set("errMsg", err.Error())
 			}
 		} else {
-			//token := util.GenerateJWT()
-			c.JSON(http.StatusOK, Response{Message: "OK"})
+			token, err := jsonutil.GenerateJWT(strconv.FormatInt(user.Id, 10))
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				return
+			}
+			c.JSON(http.StatusOK, Response{Message: "OK", Data: token})
 		}
 	}
 }

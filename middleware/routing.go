@@ -1,3 +1,5 @@
+// Package middleware includes all gin-style middleware.
+// Both API and middleware are in handlers chain.
 package middleware
 
 import (
@@ -8,8 +10,8 @@ import (
 	"strconv"
 )
 
-// IdValidator validates whether id is valid
-// with GET, PUT, DELETE method, we expect that id is integer(int64)
+// IdValidator validates whether id is valid.
+// With GET, PUT, DELETE method, we expect that id is integer(int64).
 func IdValidator() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
@@ -35,8 +37,8 @@ func IdValidator() gin.HandlerFunc {
 	}
 }
 
-// Errhandler checks whether there is an error
-// if not, it will do nothing and just return
+// Errhandler checks whether there is an error after API is called.
+// If not, it will do nothing and just return
 func Errhandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
