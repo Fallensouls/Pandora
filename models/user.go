@@ -21,7 +21,6 @@ type User struct {
 	Cellphone   *string     `json:"cellphone,omitempty"`
 	Auth        []Authority `json:"-" xorm:"extends"`
 	Status      int         `json:"-"`
-	LastLogin   JsonTime    `json:"-"`
 	LastModify  JsonTime    `json:"-"`
 }
 
@@ -121,12 +120,6 @@ func (u *User) CheckPassword() error {
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pw)); err != nil {
 		return errs.ErrWrongPassword
-	}
-	var loginTime JsonTime
-	loginTime.GetJsonTime()
-	if _, err := engine.ID(u.Id).Cols("last_login").
-		Update(&User{LastLogin: loginTime}); err != nil {
-		return errs.New(err)
 	}
 	return nil
 }

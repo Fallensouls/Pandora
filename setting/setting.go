@@ -17,9 +17,9 @@ type Configuration struct {
 
 type Database struct {
 	//Type     string
-	DBName     string
-	DBUser     string
-	DBPassword string
+	DBName     string `yaml:"name"`
+	DBUser     string `yaml:"user"`
+	DBPassword string `yaml:"password"`
 	DBHost     string `yaml:"host"`
 	DBPort     string `yaml:"port"`
 }

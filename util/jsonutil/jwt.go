@@ -35,7 +35,7 @@ func GenerateJWT(id int64) (token string, err error) {
 
 // ValidateJWT validates whether jwt is valid.
 // If so, we still have to check if user really logged in before.
-func ValidateJWT(tokenString string) (int64, error) {
+func ValidateJWT(tokenString string) (int64, int64, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -46,14 +46,16 @@ func ValidateJWT(tokenString string) (int64, error) {
 
 	claims := token.Claims.(jwt.MapClaims)
 	if claims["id"] == nil || err != nil {
-		return 0, errs.ErrInvalidToken
+		return 0, 0, errs.ErrInvalidToken
 	}
 
 	id, ok := claims["id"].(float64)
 	if !ok {
-		return 0, errs.ErrInvalidToken
+		return 0, 0, errs.ErrInvalidToken
 	}
-	return int64(id), nil
+
+	nbf := claims["nbf"].(float64)
+	return int64(id), int64(nbf), nil
 }
 
 func getSigningMethod(method string) *jwt.SigningMethodHMAC {

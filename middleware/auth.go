@@ -32,12 +32,12 @@ func Authenticator() gin.HandlerFunc {
 		}
 
 		token := parts[1]
-		if id, err := jsonutil.ValidateJWT(token); err != nil {
+		if id, timestamp, err := jsonutil.ValidateJWT(token); err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.Response{
 				Message: err.Error(),
 			})
 		} else { // check if a user really logs in
-			status, e := redis.CheckLoginStatus(id)
+			status, e := redis.CheckJWTStatus(id, timestamp)
 			if e != nil {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return

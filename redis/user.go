@@ -1,6 +1,9 @@
 package redis
 
-import "log"
+import (
+	"strconv"
+	"time"
+)
 
 const (
 	Login  = 1
@@ -15,12 +18,23 @@ func SetStatusLogout(id int64) error {
 	return client.SetBit("login_status", id, Logout).Err()
 }
 
-// CheckStatus check if user have logged in.
-func CheckLoginStatus(id int64) (bool, error) {
+func SetLoginTime(id int64) error {
+	return client.HSet("login_time", strconv.FormatInt(id, 10), time.Now().Unix()).Err()
+}
+
+// CheckJWTStatus checks if user's jwt becomes invalid.
+func CheckJWTStatus(id int64, timestamp int64) (bool, error) {
 	status, err := client.GetBit("login_status", id).Result()
-	log.Println(status)
-	if status == Login {
-		return true, err
+	if status == Logout {
+		return false, err
 	}
-	return false, err
+	unixTime, err := client.HGet("login_time", strconv.FormatInt(id, 10)).Result()
+	if err != nil {
+		return false, err
+	}
+	loginTime, _ := strconv.ParseInt(unixTime, 10, 64)
+	if timestamp < loginTime-3 {
+		return false, nil
+	}
+	return true, nil
 }
