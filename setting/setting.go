@@ -2,55 +2,76 @@
 package setting
 
 import (
-	"github.com/go-ini/ini"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"log"
 	"time"
 )
 
-type DatabaseConfig struct {
-	//Type     string `ini:"type"`
-	Name     string `ini:"name"`
-	User     string `ini:"user"`
-	Password string `ini:"password"`
-	Host     string `ini:"host"`
-	Port     string `ini:"port"`
+type Configuration struct {
+	*Database
+	*Server
+	*Redis
+	*JWT
 }
 
-type ServerConfig struct {
-	RunMode      string        `ini:"run_mode"`
-	Port         string        `ini:"http_port"`
-	ReadTimeout  time.Duration `ini:"read_timeout"`
-	WriteTimeout time.Duration `ini:"write_timeout"`
+type Database struct {
+	//Type     string
+	DBName     string
+	DBUser     string
+	DBPassword string
+	DBHost     string `yaml:"host"`
+	DBPort     string `yaml:"port"`
 }
 
-type JWTConfig struct {
-	Secret   string        `ini:"secret"`
-	Duration time.Duration `ini:"duration"`
+type Server struct {
+	RunMode      string
+	Port         string
+	ReadTimeout  time.Duration `yaml:"read_timeout"`
+	WriteTimeout time.Duration `yaml:"write_timeout"`
 }
 
-var (
-	DbConfig  = &DatabaseConfig{}
-	ServerCfg = &ServerConfig{}
-	JwtConfig = &JWTConfig{}
-)
+type Redis struct {
+	RedisHost     string `yaml:"host"`
+	RedisPort     string `yaml:"port"`
+	RedisPassword string `yaml:"password"`
+}
+
+type JWT struct {
+	SigningAlgorithm string `yaml:"signing_algorithm"`
+	Secret           string
+	Timeout          time.Duration
+	Issuer           string
+	MaxRefresh       time.Duration `yaml:"max_refresh_time"`
+}
+
+var Config Configuration
 
 func init() {
-	if cfg, err := ini.Load("conf/app.ini"); err != nil {
-		log.Panic("fail to load config file")
+	data, err := ioutil.ReadFile("conf/config.yaml")
+	if err != nil {
+		log.Panicln("failed to load config file")
+	}
+	if err = yaml.Unmarshal(data, &Config); err != nil {
+		log.Panicln("failed to load configuration")
 	} else {
-		if err := cfg.Section("database").MapTo(DbConfig); err != nil {
-			log.Panic("fail to set database config")
+		if Config.Database == nil {
+			log.Panicln("failed to init database configuration")
 		}
-
-		if err := cfg.Section("server").MapTo(ServerCfg); err != nil {
-			log.Panic("fail to set server config")
+		if Config.Server == nil {
+			log.Panicln("failed to init server configuration")
 		}
-		ServerCfg.RunMode = cfg.Section("").Key("run_mode").String()
-
-		if err := cfg.Section("jwt").MapTo(JwtConfig); err != nil {
-			log.Println("fail to set jwt config, use default jwt config...")
-			JwtConfig.Duration = time.Hour
-			JwtConfig.Secret = "Hatsune Miku"
+		if Config.Redis == nil {
+			log.Panicln("failed to init redis configuration")
+		}
+		if Config.JWT == nil {
+			log.Println("failed to init jwt configuration, use default jwt config...")
+			Config.JWT = &JWT{}
+			Config.Timeout = time.Hour
+			Config.Secret = "Hatsune Miku"
+			Config.Issuer = "Fallensouls"
+		} else {
+			Config.Timeout *= time.Minute
 		}
 	}
 }

@@ -9,21 +9,17 @@ import (
 )
 
 func SetRouter() (r *gin.Engine) {
-	r = gin.New()
-	r.Use(gin.Logger())
-	r.Use(gin.Recovery())
-	gin.SetMode(ServerCfg.RunMode)
+	r = gin.Default()
+	gin.SetMode(Config.RunMode)
+	r.Use(middleware.ErrHandler())
 
-	root := r.Group("")
-	root.Use(middleware.Errhandler())
-	{
-		root.POST("/register", api.Register)
-		root.POST("/login", api.Login)
-	}
+	r.POST("/register", api.Register)
+	r.POST("/login", api.Login)
+	r.PUT("/activate/:id", api.ActivateUser)
+	r.PUT("/logout", middleware.Authenticator(), api.Logout)
 
 	Api := r.Group("/api")
-	Api.Use(middleware.IdValidator())
-	Api.Use(middleware.Errhandler())
+	Api.Use(middleware.IdValidator(), middleware.Authenticator(), middleware.SimpleAuthorizer())
 	{
 		Api.GET("/user/:id", api.GetProfile)
 		Api.PUT("/user/:id", api.UpdateProfile)

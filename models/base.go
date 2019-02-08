@@ -21,14 +21,14 @@ var engine *xorm.Engine
 func init() {
 	var err error
 	engine, err = xorm.NewEngine("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s",
-		DbConfig.Host,
-		DbConfig.Port,
-		DbConfig.User,
-		DbConfig.Name,
-		DbConfig.Password))
+		Config.DBHost,
+		Config.DBPort,
+		Config.DBUser,
+		Config.DBName,
+		Config.DBPassword))
 
 	if err != nil {
-		log.Panic(err)
+		log.Panicln("failed to connect to Postgres:" + err.Error())
 	}
 
 	engine.ShowSQL(true)

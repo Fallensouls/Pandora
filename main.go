@@ -14,10 +14,10 @@ import (
 func main() {
 	router := SetRouter()
 	s := &http.Server{
-		Addr:           ":" + ServerCfg.Port,
+		Addr:           ":" + Config.Port,
 		Handler:        router,
-		ReadTimeout:    ServerCfg.ReadTimeout * time.Second,
-		WriteTimeout:   ServerCfg.WriteTimeout * time.Second,
+		ReadTimeout:    Config.ReadTimeout * time.Second,
+		WriteTimeout:   Config.WriteTimeout * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
@@ -25,6 +25,7 @@ func main() {
 		if err := s.ListenAndServe(); err != nil {
 			log.Panicf("Fail to start server: %s", err)
 		}
+		log.Println("--------------Welcome to Pandora---------------")
 	}()
 
 	quit := make(chan os.Signal, 1)
