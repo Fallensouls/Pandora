@@ -36,8 +36,8 @@ func Authenticator() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.Response{
 				Message: err.Error(),
 			})
-		} else { // check if a user really logs in
-			status, e := redis.CheckJWTStatus(id, timestamp)
+		} else {
+			status, e := redis.CheckJWTInBlacklist(id, timestamp)
 			if e != nil {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return

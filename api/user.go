@@ -58,9 +58,9 @@ func Login(c *gin.Context) {
 	//}
 
 	token, err1 := jsonutil.GenerateJWT(user.Id)
-	err2 := redis.SetStatusLogin(user.Id)
-	err3 := redis.SetLoginTime(user.Id)
-	if err1 != nil || err2 != nil || err3 != nil {
+	//err2 := redis.SetStatusLogin(user.Id)
+	err2 := redis.SetNBFTime(user.Id)
+	if err1 != nil || err2 != nil {
 		c.Status(http.StatusInternalServerError)
 		return
 	}
@@ -70,7 +70,7 @@ func Login(c *gin.Context) {
 
 func Logout(c *gin.Context) {
 	id := c.GetInt64("user_id")
-	if err := redis.SetStatusLogout(id); err != nil {
+	if err := redis.SetNBFTime(id); err != nil {
 		c.Set("error", err)
 		return
 	}
