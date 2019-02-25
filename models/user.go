@@ -3,7 +3,7 @@ package models
 import (
 	"github.com/Fallensouls/Pandora/errs"
 	. "github.com/Fallensouls/Pandora/util/jsonutil"
-	. "github.com/Fallensouls/Pandora/util/validation"
+	. "github.com/Fallensouls/Pandora/util/valiutil"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
 )

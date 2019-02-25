@@ -38,11 +38,12 @@ type Redis struct {
 }
 
 type JWT struct {
-	SigningAlgorithm string `yaml:"signing_algorithm"`
-	Secret           string
-	Timeout          time.Duration
+	SigningAlgorithm string        `yaml:"signing_algorithm"`
+	AccessSecret     string        `yaml:"access_secret"`
+	RefreshSecret    string        `yaml:"refresh_secret"`
+	Timeout          time.Duration `yaml:"duration"`
 	Issuer           string
-	MaxRefresh       time.Duration `yaml:"max_refresh_time"`
+	MaxRefreshTime   time.Duration `yaml:"max_refresh_time"`
 }
 
 var Config Configuration
@@ -62,16 +63,19 @@ func init() {
 			log.Panicln("failed to init server configuration")
 		}
 		if Config.Redis == nil {
-			log.Panicln("failed to init redis configuration")
+			log.Panicln("failed to init cache configuration")
 		}
 		if Config.JWT == nil {
 			log.Println("failed to init jwt configuration, use default jwt config...")
 			Config.JWT = &JWT{}
 			Config.Timeout = time.Hour
-			Config.Secret = "Hatsune Miku"
+			Config.MaxRefreshTime = 7 * 24 * time.Hour
+			Config.AccessSecret = "Hatsune Miku"
+			Config.RefreshSecret = "Miku-chan maji tenshi"
 			Config.Issuer = "Fallensouls"
 		} else {
 			Config.Timeout *= time.Minute
+			Config.MaxRefreshTime *= time.Hour
 		}
 	}
 }

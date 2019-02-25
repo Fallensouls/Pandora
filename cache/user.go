@@ -1,4 +1,4 @@
-package redis
+package cache
 
 import (
 	"strconv"
@@ -10,8 +10,8 @@ const (
 	Logout = 0
 )
 
-// You can use bitmap of redis to keep a record of each user's login status.
-
+// You can use bitmap of cache to keep a record of each user's login status.
+// Here we don't use it.
 func SetStatusLogin(id int64) error {
 	return client.SetBit("LoginStatus", id, Login).Err()
 }
@@ -20,15 +20,15 @@ func SetStatusLogout(id int64) error {
 	return client.SetBit("LoginStatus", id, Logout).Err()
 }
 
-// SetNBFTime resets NotBefore time of user's jwt.
-// All jwt issued before the new NotBefore time will be rejected.
-func SetNBFTime(id int64) error {
-	return client.HSet("nbf", strconv.FormatInt(id, 10), time.Now().Unix()).Err()
+// SetJWTDeadline resets deadline time of user's jwt.
+// All jwt issued before the new deadline will be rejected.
+func SetJWTDeadline(id int64) error {
+	return client.HSet("deadline", strconv.FormatInt(id, 10), time.Now().Unix()).Err()
 }
 
 // CheckJWTInBlacklist checks if user's jwt is in blacklist.
 func CheckJWTInBlacklist(id int64, timestamp int64) (bool, error) {
-	unixTime, err := client.HGet("nbf", strconv.FormatInt(id, 10)).Result()
+	unixTime, err := client.HGet("deadline", strconv.FormatInt(id, 10)).Result()
 	if err != nil {
 		return false, err
 	}

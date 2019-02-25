@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"github.com/Fallensouls/Pandora/api"
+	"github.com/Fallensouls/Pandora/cache"
 	"github.com/Fallensouls/Pandora/errs"
-	"github.com/Fallensouls/Pandora/redis"
 	"github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -32,12 +32,12 @@ func Authenticator() gin.HandlerFunc {
 		}
 
 		token := parts[1]
-		if id, timestamp, err := jsonutil.ValidateJWT(token); err != nil {
+		if id, timestamp, err := jsonutil.ValidateAccessJWT(token); err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, api.Response{
 				Message: err.Error(),
 			})
 		} else {
-			status, e := redis.CheckJWTInBlacklist(id, timestamp)
+			status, e := cache.CheckJWTInBlacklist(id, timestamp)
 			if e != nil {
 				c.AbortWithStatus(http.StatusInternalServerError)
 				return

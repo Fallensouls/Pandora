@@ -1,9 +1,8 @@
 package api
 
 import (
+	"github.com/Fallensouls/Pandora/cache"
 	"github.com/Fallensouls/Pandora/models"
-	"github.com/Fallensouls/Pandora/redis"
-	"github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -30,54 +29,6 @@ func Register(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-// Login by email address or cellphone number
-func Login(c *gin.Context) {
-	var (
-		user models.User
-		err  error
-	)
-	defer func() { c.Set("error", err) }()
-
-	if c.BindJSON(&user) != nil {
-		return
-	}
-
-	if err = user.CheckPassword(); err != nil {
-		return
-	}
-
-	//// A user that has logged in can't login again
-	//var status bool
-	//status, err = redis.CheckLoginStatus(user.Id)
-	//if err != nil{
-	//	return
-	//}
-	//if status{
-	//	err = errs.ErrUserLogin
-	//	return
-	//}
-
-	token, err1 := jsonutil.GenerateJWT(user.Id)
-	//err2 := redis.SetStatusLogin(user.Id)
-	err2 := redis.SetNBFTime(user.Id)
-	if err1 != nil || err2 != nil {
-		c.Status(http.StatusInternalServerError)
-		return
-	}
-
-	c.JSON(http.StatusOK, Response{Message: "OK", Data: token})
-}
-
-func Logout(c *gin.Context) {
-	id := c.GetInt64("user_id")
-	if err := redis.SetNBFTime(id); err != nil {
-		c.Set("error", err)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
 func ActivateUser(c *gin.Context) {
 	id := c.GetInt64("id")
 	if err := models.ActivateUser(id); err != nil {
@@ -92,6 +43,12 @@ func RestrictUser(c *gin.Context) {
 	id := c.GetInt64("id")
 	if err := models.RestrictUser(id); err != nil {
 		c.Set("error", err)
+		return
+	}
+
+	if err := cache.SetJWTDeadline(id); err != nil {
+		c.Set("error", err)
+		return
 	}
 
 	c.Status(http.StatusOK)
@@ -101,6 +58,11 @@ func BanUser(c *gin.Context) {
 	id := c.GetInt64("id")
 	if err := models.BanUser(id); err != nil {
 		c.Set("error", err)
+		return
+	}
+	if err := cache.SetJWTDeadline(id); err != nil {
+		c.Set("error", err)
+		return
 	}
 
 	c.Status(http.StatusOK)
@@ -130,5 +92,5 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, Response{Data: user})
 }

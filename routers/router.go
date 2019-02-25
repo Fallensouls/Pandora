@@ -13,10 +13,14 @@ func SetRouter() (r *gin.Engine) {
 	gin.SetMode(Config.RunMode)
 	r.Use(middleware.ErrHandler())
 
-	r.POST("/register", api.Register)
-	r.POST("/login", api.Login)
-	r.PUT("/activate/:id", api.ActivateUser)
-	r.PUT("/logout", middleware.Authenticator(), api.Logout)
+	auth := r.Group("/auth")
+	{
+		auth.POST("/register", api.Register)
+		auth.POST("/login", api.Login)
+		auth.PUT("/activate/:id", api.ActivateUser)
+		auth.PUT("/logout", middleware.Authenticator(), api.Logout)
+		auth.GET("/refresh", api.RefreshToken)
+	}
 
 	Api := r.Group("/api")
 	Api.Use(middleware.IdValidator(), middleware.Authenticator(), middleware.SimpleAuthorizer())

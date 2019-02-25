@@ -1,16 +1,17 @@
-package redis
+package cache
 
 import (
 	. "github.com/Fallensouls/Pandora/setting"
 	"github.com/go-redis/redis"
 	"log"
+	"net"
 )
 
 var client *redis.Client
 
 func init() {
 	client = redis.NewClient(&redis.Options{
-		Addr:     Config.RedisHost + ":" + Config.RedisPort,
+		Addr:     net.JoinHostPort(Config.RedisHost, Config.RedisPort),
 		Password: Config.RedisPassword,
 		DB:       0,
 	})
