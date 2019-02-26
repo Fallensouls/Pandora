@@ -35,7 +35,7 @@ func ValidateEmail(email string) error {
 }
 
 func ValidateCellphone(tel string) error {
-	re, _ := regexp.Compile(`^1([3[0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$`)
+	re, _ := regexp.Compile(`^1(3[0-9]|4[579]|5[0-3,5-9]|6[6]|7[0135678]|8[0-9]|9[89])\d{8}$`)
 	if !re.MatchString(tel) {
 		return errors.New("cellphone number is invalid")
 	}

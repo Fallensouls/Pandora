@@ -1,5 +1,5 @@
-// Package setting only accomplishes loading configuration.
-package setting
+// Package conf only accomplishes loading configuration.
+package conf
 
 import (
 	"gopkg.in/yaml.v2"

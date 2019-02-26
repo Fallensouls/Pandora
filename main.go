@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	. "github.com/Fallensouls/Pandora/conf"
 	. "github.com/Fallensouls/Pandora/routers"
-	. "github.com/Fallensouls/Pandora/setting"
 	"log"
 	"net/http"
 	"os"

@@ -3,8 +3,8 @@ package routers
 
 import (
 	"github.com/Fallensouls/Pandora/api"
+	. "github.com/Fallensouls/Pandora/conf"
 	"github.com/Fallensouls/Pandora/middleware"
-	. "github.com/Fallensouls/Pandora/setting"
 	"github.com/gin-gonic/gin"
 )
 

@@ -75,6 +75,10 @@ func (u *User) GetUser(id int64) error {
 // AddUser will add a new user.
 // Users can sign up by email address or cellphone number.
 func (u *User) AddUser() error {
+	if err := u.validateUserInfo(); err != nil {
+		return err
+	}
+
 	if err := encodePassword(&u.Password); err != nil {
 		return errs.New(err)
 	}
@@ -150,8 +154,8 @@ func BanUser(id int64) error {
 	return changeStatus(id, Banned)
 }
 
-// ValidateUserInfo validates whether user's information is valid.
-func (u *User) ValidateUserInfo() (err error) {
+// validateUserInfo validates whether user's information is valid.
+func (u *User) validateUserInfo() (err error) {
 	if u.Email == nil && u.Cellphone == nil {
 		return errs.ErrInfoRequired
 	}

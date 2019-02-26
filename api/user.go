@@ -18,10 +18,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	if err = user.ValidateUserInfo(); err != nil {
-		return
-	}
-
 	if err = user.AddUser(); err != nil {
 		return
 	}

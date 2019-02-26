@@ -2,8 +2,8 @@ package jsonutil
 
 import (
 	"fmt"
+	. "github.com/Fallensouls/Pandora/conf"
 	"github.com/Fallensouls/Pandora/errs"
-	. "github.com/Fallensouls/Pandora/setting"
 	"github.com/dgrijalva/jwt-go"
 	"time"
 )
