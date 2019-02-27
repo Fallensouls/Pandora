@@ -17,7 +17,7 @@ func SetRouter() (r *gin.Engine) {
 	{
 		auth.POST("/register", api.Register)
 		auth.POST("/login", api.Login)
-		auth.PUT("/activate/:id", api.ActivateUser)
+		auth.GET("/activate", api.ActivateUser)
 		auth.PUT("/logout", middleware.Authenticator(), api.Logout)
 		auth.GET("/refresh", api.RefreshToken)
 	}

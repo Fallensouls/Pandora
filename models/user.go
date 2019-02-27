@@ -114,6 +114,7 @@ func (u *User) CheckPassword() error {
 			return errs.ErrUserNotFound
 		}
 	}
+	// TODO: there should be more details if user's account is inactive, restricted or banned.
 	switch u.Status {
 	case Inactive:
 		return errs.ErrUserInactive
@@ -128,30 +129,30 @@ func (u *User) CheckPassword() error {
 	return nil
 }
 
-func (u *User) ChangeEmail(id int64) error {
-	if _, err := engine.ID(id).Cols("email").Update(u); err != nil {
+func (u *User) ChangeEmail() error {
+	if _, err := engine.ID(u.Id).Cols("email").Update(u); err != nil {
 		return errs.New(err)
 	}
 	return nil
 }
 
-func (u *User) ChangeCellphone(id int64) error {
-	if _, err := engine.ID(id).Cols("cellphone").Update(u); err != nil {
+func (u *User) ChangeCellphone() error {
+	if _, err := engine.ID(u.Id).Cols("cellphone").Update(u); err != nil {
 		return errs.New(err)
 	}
 	return nil
 }
 
-func ActivateUser(id int64) error {
-	return changeStatus(id, Normal)
+func (u *User) ActivateUser() error {
+	return changeStatus(u.Id, Normal)
 }
 
-func RestrictUser(id int64) error {
-	return changeStatus(id, Restricted)
+func (u *User) RestrictUser() error {
+	return changeStatus(u.Id, Restricted)
 }
 
-func BanUser(id int64) error {
-	return changeStatus(id, Banned)
+func (u *User) BanUser() error {
+	return changeStatus(u.Id, Banned)
 }
 
 // validateUserInfo validates whether user's information is valid.
@@ -201,8 +202,8 @@ func ChangePassword(id int64, old string, new string) error {
 	}
 	var modifyTime JsonTime
 	modifyTime.GetJsonTime()
-	if _, err := engine.ID(user.Id).Cols("last_modify").
-		Update(&User{LastModify: modifyTime}); err != nil {
+	if _, err := engine.ID(user.Id).Cols("password", "last_modify").
+		Update(&User{Password: user.Password, LastModify: modifyTime}); err != nil {
 		return errs.New(err)
 	}
 	return nil

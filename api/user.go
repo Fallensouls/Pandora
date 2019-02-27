@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/Fallensouls/Pandora/cache"
 	"github.com/Fallensouls/Pandora/models"
+	"github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -22,12 +23,25 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// TODO: send new user an email to activate his account.
+	//token, _ := jsonutil.GenerateAccessJWT(user.Id)
+	//url := "http://pandora.com/auth/activate?token=" + token
+	//log.Println(url)
+	//send email...
 	c.Status(http.StatusOK)
 }
 
 func ActivateUser(c *gin.Context) {
-	id := c.GetInt64("id")
-	if err := models.ActivateUser(id); err != nil {
+	token := c.Query("token")
+	id, _, err := jsonutil.ValidateAccessJWT(token)
+	if err != nil {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	var user models.User
+	user.Id = id
+
+	if err := user.ActivateUser(); err != nil {
 		c.Set("error", err)
 		return
 	}
@@ -37,7 +51,9 @@ func ActivateUser(c *gin.Context) {
 
 func RestrictUser(c *gin.Context) {
 	id := c.GetInt64("id")
-	if err := models.RestrictUser(id); err != nil {
+	var user models.User
+	user.Id = id
+	if err := user.RestrictUser(); err != nil {
 		c.Set("error", err)
 		return
 	}
@@ -52,7 +68,9 @@ func RestrictUser(c *gin.Context) {
 
 func BanUser(c *gin.Context) {
 	id := c.GetInt64("id")
-	if err := models.BanUser(id); err != nil {
+	var user models.User
+	user.Id = id
+	if err := user.BanUser(); err != nil {
 		c.Set("error", err)
 		return
 	}
