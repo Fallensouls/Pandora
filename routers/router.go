@@ -13,6 +13,13 @@ func SetRouter() (r *gin.Engine) {
 	gin.SetMode(Config.RunMode)
 	r.Use(middleware.ErrHandler())
 
+	r.MaxMultipartMemory = 4 << 20
+	upload := r.Group("/upload")
+	upload.Use(middleware.Authenticator())
+	{
+		upload.POST("/avatar", api.UploadAvatar)
+	}
+
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", api.Register)

@@ -5,6 +5,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
+	"os"
 	"time"
 )
 
@@ -13,6 +14,7 @@ type Configuration struct {
 	*Server
 	*Redis
 	*JWT
+	*Storage
 }
 
 type Database struct {
@@ -46,36 +48,75 @@ type JWT struct {
 	MaxRefreshTime   time.Duration `yaml:"max_refresh_time"`
 }
 
+type Storage struct {
+	*Image
+}
+
+type Image struct {
+	AvatarPath string `yaml:"avatar"`
+}
+
 var Config Configuration
 
 func init() {
+	loadConfig()
+	checkDatabase()
+	checkServer()
+	checkRedis()
+	checkJWT()
+	checkStorage()
+}
+
+func loadConfig() {
 	data, err := ioutil.ReadFile("conf/config.yaml")
 	if err != nil {
 		log.Panicln("failed to load config file")
 	}
 	if err = yaml.Unmarshal(data, &Config); err != nil {
 		log.Panicln("failed to load configuration")
-	} else {
-		if Config.Database == nil {
-			log.Panicln("failed to init database configuration")
-		}
-		if Config.Server == nil {
-			log.Panicln("failed to init server configuration")
-		}
-		if Config.Redis == nil {
-			log.Panicln("failed to init cache configuration")
-		}
-		if Config.JWT == nil {
-			log.Println("failed to init jwt configuration, use default jwt config...")
-			Config.JWT = &JWT{}
-			Config.Timeout = time.Hour
-			Config.MaxRefreshTime = 7 * 24 * time.Hour
-			Config.AccessSecret = "Hatsune Miku"
-			Config.RefreshSecret = "Miku-chan maji tenshi"
-			Config.Issuer = "Fallensouls"
-		} else {
-			Config.Timeout *= time.Minute
-			Config.MaxRefreshTime *= time.Hour
-		}
 	}
+}
+
+func checkDatabase() {
+	if Config.Database == nil {
+		log.Panicln("failed to init database configuration")
+	}
+}
+
+func checkServer() {
+	if Config.Server == nil {
+		log.Panicln("failed to init server configuration")
+	}
+}
+
+func checkRedis() {
+	if Config.Redis == nil {
+		log.Panicln("failed to init cache configuration")
+	}
+}
+
+func checkJWT() {
+	if Config.JWT == nil {
+		log.Println("failed to init jwt configuration, use default jwt config...")
+		Config.JWT = &JWT{}
+		Config.Timeout = time.Hour
+		Config.MaxRefreshTime = 7 * 24 * time.Hour
+		Config.AccessSecret = "Hatsune Miku"
+		Config.RefreshSecret = "Miku-chan maji tenshi"
+		Config.Issuer = "Fallensouls"
+	} else {
+		Config.Timeout *= time.Minute
+		Config.MaxRefreshTime *= time.Hour
+	}
+}
+
+func checkStorage() {
+	if Config.Storage == nil {
+		log.Panicln("failed to init storage configuration")
+	}
+
+	if err := os.MkdirAll(Config.AvatarPath, os.ModeDir); err != nil {
+		log.Panicf("failed to create avatar path, error: %s", err.Error())
+	}
+
 }
