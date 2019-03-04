@@ -49,7 +49,7 @@ jwt:
 - [ ] Docker
 - [ ] Pandora-pkg
     - [ ] CAPTCHA
-    - [ ] Email
+    - [x] Email
     - [ ] SMS
     - [ ] QR Code
     

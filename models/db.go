@@ -3,7 +3,6 @@ package models
 import (
 	"fmt"
 	. "github.com/Fallensouls/Pandora/conf"
-	. "github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	_ "github.com/lib/pq"

@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/Fallensouls/Pandora/cache"
+	"github.com/Fallensouls/Pandora/middleware/jwt"
 	"github.com/Fallensouls/Pandora/models"
-	"github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -33,7 +33,7 @@ func Register(c *gin.Context) {
 
 func ActivateUser(c *gin.Context) {
 	token := c.Query("token")
-	id, _, err := jsonutil.ValidateAccessJWT(token)
+	id, _, err := jwt.ValidateAccessJWT(token)
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 		return

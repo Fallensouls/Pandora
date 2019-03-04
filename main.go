@@ -3,17 +3,18 @@ package main
 import (
 	"context"
 	. "github.com/Fallensouls/Pandora/conf"
-	. "github.com/Fallensouls/Pandora/routers"
+	"github.com/Fallensouls/Pandora/routers"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 )
 
 func main() {
-	router := SetRouter()
-	s := &http.Server{
+	router := routers.SetRouter()
+	server := &http.Server{
 		Addr:           ":" + Config.Port,
 		Handler:        router,
 		ReadTimeout:    Config.ReadTimeout * time.Second,
@@ -22,21 +23,21 @@ func main() {
 	}
 
 	go func() {
-		if err := s.ListenAndServe(); err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Panicf("Fail to start server: %s", err)
 		}
 		log.Println("--------------Welcome to Pandora---------------")
 	}()
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Println("Shutdown Server......")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := s.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		log.Panic("Server Shutdown:", err)
 	}
 

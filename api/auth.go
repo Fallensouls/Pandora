@@ -3,15 +3,21 @@ package api
 import (
 	"github.com/Fallensouls/Pandora/cache"
 	"github.com/Fallensouls/Pandora/errs"
+	"github.com/Fallensouls/Pandora/middleware/jwt"
 	"github.com/Fallensouls/Pandora/models"
-	"github.com/Fallensouls/Pandora/util/jsonutil"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
 )
 
+/*
+	*************************************
+    *     JWT-Based Authentication      *
+    *************************************
+*/
+
 // Login by email address or cellphone number.
-func Login(c *gin.Context) {
+func LoginByJWT(c *gin.Context) {
 	var (
 		user models.User
 		err  error
@@ -22,7 +28,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if err = user.CheckPassword(); err != nil {
+	if err = user.Login(); err != nil {
 		return
 	}
 
@@ -37,8 +43,8 @@ func Login(c *gin.Context) {
 	//	return
 	//}
 
-	accessToken, err1 := jsonutil.GenerateAccessJWT(user.Id)
-	refreshToken, err2 := jsonutil.GenerateRefreshJWT(user.Id)
+	accessToken, err1 := jwt.GenerateAccessJWT(user.Id)
+	refreshToken, err2 := jwt.GenerateRefreshJWT(user.Id)
 	err3 := cache.SetJWTDeadline(user.Id)
 	if err1 != nil || err2 != nil || err3 != nil {
 		c.Status(http.StatusInternalServerError)
@@ -51,7 +57,7 @@ func Login(c *gin.Context) {
 	}})
 }
 
-func Logout(c *gin.Context) {
+func LogoutByJWT(c *gin.Context) {
 	id := c.GetInt64("user_id")
 	if err := cache.SetJWTDeadline(id); err != nil {
 		c.Set("error", err)
@@ -78,7 +84,7 @@ func RefreshToken(c *gin.Context) {
 	}
 
 	token := parts[1]
-	if id, timestamp, err := jsonutil.ValidateRefreshJWT(token); err != nil {
+	if id, timestamp, err := jwt.ValidateRefreshJWT(token); err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, Response{
 			Message: err.Error(),
 		})
@@ -94,7 +100,7 @@ func RefreshToken(c *gin.Context) {
 			})
 			return
 		}
-		token, err := jsonutil.GenerateAccessJWT(id)
+		token, err := jwt.GenerateAccessJWT(id)
 		if err != nil {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
@@ -104,4 +110,18 @@ func RefreshToken(c *gin.Context) {
 		},
 		})
 	}
+}
+
+/*
+	******************************************
+	*       Session-Based Authentication     *
+    ******************************************
+*/
+
+func LoginBySession() {
+
+}
+
+func LogoutBySession() {
+
 }

@@ -2,8 +2,7 @@ package models
 
 import (
 	"github.com/Fallensouls/Pandora/errs"
-	. "github.com/Fallensouls/Pandora/util/jsonutil"
-	. "github.com/Fallensouls/Pandora/util/valiutil"
+	"github.com/Fallensouls/Pandora/util/validation"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
 )
@@ -21,6 +20,7 @@ type User struct {
 	Cellphone   *string     `json:"cellphone,omitempty"`
 	Auth        []Authority `json:"-" xorm:"extends"`
 	Status      int         `json:"-"`
+	LastLogin   JsonTime    `json:"-"`
 	LastModify  JsonTime    `json:"-"`
 }
 
@@ -103,8 +103,9 @@ func (u *User) UpdateUserProfile(id int64) error {
 	return nil
 }
 
-// CheckPassword compares password provided by user and password stored in database.
-func (u *User) CheckPassword() error {
+// Login compares password provided by user and password stored in database.
+// If user logs in successfully, login time will be recorded.
+func (u *User) Login() error {
 	pw := u.Password
 	u.Password = ""
 	if exist, err := engine.Cols("id", "password", "status").Get(u); err != nil {
@@ -125,6 +126,10 @@ func (u *User) CheckPassword() error {
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(pw)); err != nil {
 		return errs.ErrWrongPassword
+	}
+	var loginTime = Now()
+	if _, err := engine.ID(u.Id).Cols("last_login").Update(&User{LastLogin: loginTime}); err != nil {
+		return errs.New(err)
 	}
 	return nil
 }
@@ -160,19 +165,19 @@ func (u *User) validateUserInfo() (err error) {
 	if u.Email == nil && u.Cellphone == nil {
 		return errs.ErrInfoRequired
 	}
-	if err = ValidateUsername(u.Username); err != nil {
+	if err = validation.ValidateUsername(u.Username); err != nil {
 		return errs.ErrInvalidUsername
 	}
-	if err = ValidatePassword(u.Password); err != nil {
+	if err = validation.ValidatePassword(u.Password); err != nil {
 		return errs.ErrInvalidPassword
 	}
 	if u.Email != nil {
-		if err = ValidateEmail(*u.Email); err != nil {
+		if err = validation.ValidateEmail(*u.Email); err != nil {
 			return errs.ErrInvalidEmail
 		}
 	}
 	if u.Cellphone != nil {
-		if err = ValidateCellphone(*u.Cellphone); err != nil {
+		if err = validation.ValidateCellphone(*u.Cellphone); err != nil {
 			return errs.ErrInvalidCellphone
 		}
 	}
@@ -200,8 +205,7 @@ func ChangePassword(id int64, old string, new string) error {
 	if err := encodePassword(&user.Password); err != nil {
 		return errs.ErrEncodingPassword
 	}
-	var modifyTime JsonTime
-	modifyTime.GetJsonTime()
+	var modifyTime = Now()
 	if _, err := engine.ID(user.Id).Cols("password", "last_modify").
 		Update(&User{Password: user.Password, LastModify: modifyTime}); err != nil {
 		return errs.New(err)

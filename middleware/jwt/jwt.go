@@ -1,4 +1,4 @@
-package jsonutil
+package jwt
 
 import (
 	"fmt"
@@ -48,7 +48,7 @@ func GenerateRefreshJWT(id int64) (string, error) {
 // If so, we still have to check if user really logged in before.
 func validateJWT(tokenString string, secret []byte) (int64, int64, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
+		// Don't forget to validation the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}

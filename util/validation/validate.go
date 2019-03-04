@@ -1,4 +1,4 @@
-package valiutil
+package validation
 
 import (
 	"errors"
