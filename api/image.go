@@ -2,8 +2,8 @@ package api
 
 import (
 	"fmt"
-	"github.com/Fallensouls/Pandora/errs"
 	"github.com/gin-gonic/gin"
+	"github.com/go-pandora/core/errs"
 	"net/http"
 	"path"
 	"strconv"

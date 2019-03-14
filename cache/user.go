@@ -1,15 +1,22 @@
 package cache
 
 import (
-	. "github.com/Fallensouls/Pandora/conf"
+	. "github.com/go-pandora/core/conf"
+	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
 const (
-	Login  = 1
-	Logout = 0
+	Login     = 1
+	Logout    = 0
+	PrefixJWT = "jwt"
 )
+
+func addPrefix(key string) string {
+	return strings.Join([]string{PrefixJWT}, key)
+}
 
 // You can use bitmap of cache to keep a record of each user's login status.
 // Here we don't use it.
@@ -21,22 +28,24 @@ func SetStatusLogout(id int64) error {
 	return client.SetBit("online_user", id, Logout).Err()
 }
 
-// SetJWTDeadline sets a deadline of user's jwt.
-// All jwt issued before the new deadline will be rejected.
-func SetJWTDeadline(id int64) error {
-	return client.Set(PrefixJWT+strconv.FormatInt(id, 10), time.Now().Unix(), Config.Timeout).Err()
-	//return client.HSet("deadline", strconv.FormatInt(id, 10), time.Now().Unix()).Err()
+// RevokeJWT sets a deadline of user's jwt.
+// All jwt issued before the new deadline will be revoked.
+func RevokeJWT(id string) error {
+	key := addPrefix(id)
+	return client.Set(key, time.Now().Unix(), Config.Timeout).Err()
 }
 
-// CheckJWTInBlacklist checks if user's jwt is in blacklist.
-func CheckJWTInBlacklist(id int64, timestamp int64) (bool, error) {
-	unixTime, err := client.Get(PrefixJWT + strconv.FormatInt(id, 10)).Result()
+// IsJWTRevoked checks if user's jwt is revoked.
+func IsJWTRevoked(id string, timestamp int64) (interface{}, bool) {
+	key := addPrefix(id)
+	unixTime, err := client.Get(key).Result()
 	if err != nil {
-		return false, err
+		return id, false
 	}
+	log.Println(unixTime)
 	loginTime, _ := strconv.ParseInt(unixTime, 10, 64)
 	if timestamp < loginTime-3 {
-		return false, nil
+		return nil, true
 	}
-	return true, nil
+	return id, false
 }

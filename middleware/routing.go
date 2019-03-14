@@ -3,9 +3,9 @@
 package middleware
 
 import (
-	"github.com/Fallensouls/Pandora/api"
-	"github.com/Fallensouls/Pandora/errs"
 	"github.com/gin-gonic/gin"
+	"github.com/go-pandora/core/api"
+	"github.com/go-pandora/core/errs"
 	"log"
 	"net/http"
 	"strconv"

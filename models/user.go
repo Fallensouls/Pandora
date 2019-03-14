@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/Fallensouls/Pandora/errs"
-	"github.com/Fallensouls/Pandora/util/validation"
+	"github.com/go-pandora/core/errs"
+	"github.com/go-pandora/core/util/validation"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
 )

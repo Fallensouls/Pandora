@@ -2,7 +2,7 @@ package models
 
 import (
 	"fmt"
-	. "github.com/Fallensouls/Pandora/conf"
+	. "github.com/go-pandora/core/conf"
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	_ "github.com/lib/pq"

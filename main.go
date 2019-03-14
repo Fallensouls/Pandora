@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	. "github.com/Fallensouls/Pandora/conf"
-	"github.com/Fallensouls/Pandora/routers"
+	. "github.com/go-pandora/core/conf"
+	"github.com/go-pandora/core/routers"
 	"log"
 	"net/http"
 	"os"
@@ -26,7 +26,6 @@ func main() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Panicf("Fail to start server: %s", err)
 		}
-		log.Println("--------------Welcome to Pandora---------------")
 	}()
 
 	quit := make(chan os.Signal, 1)

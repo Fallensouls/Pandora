@@ -2,11 +2,10 @@
 package routers
 
 import (
-	"github.com/Fallensouls/Pandora/api"
-	. "github.com/Fallensouls/Pandora/conf"
-	"github.com/Fallensouls/Pandora/middleware"
-	"github.com/Fallensouls/Pandora/middleware/jwt"
 	"github.com/gin-gonic/gin"
+	"github.com/go-pandora/core/api"
+	. "github.com/go-pandora/core/conf"
+	"github.com/go-pandora/core/middleware"
 )
 
 func SetRouter() (r *gin.Engine) {
@@ -15,23 +14,23 @@ func SetRouter() (r *gin.Engine) {
 	r.Use(middleware.ErrHandler())
 
 	r.MaxMultipartMemory = 4 << 20
-	upload := r.Group("/upload")
-	upload.Use(jwt.Authenticator())
+	Upload := r.Group("/upload")
+	Upload.Use(auth.Authenticator())
 	{
-		upload.POST("/avatar", api.UploadAvatar)
+		Upload.POST("/avatar", api.UploadAvatar)
 	}
 
-	auth := r.Group("/auth")
+	Auth := r.Group("/auth")
 	{
-		auth.POST("/register", api.Register)
-		auth.POST("/login", api.LoginByJWT)
-		auth.GET("/activate", api.ActivateUser)
-		auth.PUT("/logout", jwt.Authenticator(), api.LogoutByJWT)
-		auth.GET("/refresh", api.RefreshToken)
+		Auth.POST("/register", api.Register)
+		Auth.POST("/login", LoginByJWT)
+		//Auth.GET("/activate", api.ActivateUser)
+		Auth.PUT("/logout", auth.Authenticator(), LogoutByJWT)
+		Auth.GET("/refresh", RefreshToken)
 	}
 
 	Api := r.Group("/api")
-	Api.Use(middleware.IdValidator(), jwt.Authenticator(), middleware.SimpleAuthorizer())
+	Api.Use(middleware.IdValidator(), auth.Authenticator(), middleware.SimpleAuthorizer())
 	{
 		Api.GET("/user/:id", api.GetProfile)
 		Api.PUT("/user/:id", api.UpdateProfile)

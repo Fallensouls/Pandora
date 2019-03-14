@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type Configuration struct {
+type configuration struct {
 	*Database
 	*Server
 	*Redis
@@ -56,7 +56,7 @@ type Image struct {
 	AvatarPath string `yaml:"avatar"`
 }
 
-var Config Configuration
+var Config configuration
 
 func init() {
 	loadConfig()
@@ -64,7 +64,7 @@ func init() {
 	checkServer()
 	checkRedis()
 	checkJWT()
-	checkStorage()
+	//checkStorage()
 }
 
 func loadConfig() {

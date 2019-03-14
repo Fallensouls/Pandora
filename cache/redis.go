@@ -1,7 +1,7 @@
 package cache
 
 import (
-	. "github.com/Fallensouls/Pandora/conf"
+	. "github.com/go-pandora/core/conf"
 	"github.com/go-redis/redis"
 	"log"
 	"net"

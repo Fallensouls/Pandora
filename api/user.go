@@ -1,11 +1,11 @@
 package api
 
 import (
-	"github.com/Fallensouls/Pandora/cache"
-	"github.com/Fallensouls/Pandora/middleware/jwt"
-	"github.com/Fallensouls/Pandora/models"
 	"github.com/gin-gonic/gin"
+	"github.com/go-pandora/core/cache"
+	"github.com/go-pandora/core/models"
 	"net/http"
+	"strconv"
 )
 
 func Register(c *gin.Context) {
@@ -31,23 +31,23 @@ func Register(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
-func ActivateUser(c *gin.Context) {
-	token := c.Query("token")
-	id, _, err := jwt.ValidateAccessJWT(token)
-	if err != nil {
-		c.Status(http.StatusBadRequest)
-		return
-	}
-	var user models.User
-	user.Id = id
-
-	if err := user.ActivateUser(); err != nil {
-		c.Set("error", err)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
+//func ActivateUser(c *gin.Context) {
+//	token := c.Query("token")
+//	id, _, err := jwt.ValidateAccessJWT(token)
+//	if err != nil {
+//		c.Status(http.StatusBadRequest)
+//		return
+//	}
+//	var user models.User
+//	user.Id = id
+//
+//	if err := user.ActivateUser(); err != nil {
+//		c.Set("error", err)
+//		return
+//	}
+//
+//	c.Status(http.StatusOK)
+//}
 
 func RestrictUser(c *gin.Context) {
 	id := c.GetInt64("id")
@@ -58,7 +58,7 @@ func RestrictUser(c *gin.Context) {
 		return
 	}
 
-	if err := cache.SetJWTDeadline(id); err != nil {
+	if err := cache.RevokeJWT(strconv.FormatInt(id, 10)); err != nil {
 		c.Set("error", err)
 		return
 	}
@@ -74,7 +74,7 @@ func BanUser(c *gin.Context) {
 		c.Set("error", err)
 		return
 	}
-	if err := cache.SetJWTDeadline(id); err != nil {
+	if err := cache.RevokeJWT(strconv.FormatInt(id, 10)); err != nil {
 		c.Set("error", err)
 		return
 	}

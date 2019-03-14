@@ -1,14 +1,29 @@
 package models
 
 import (
-	"github.com/Fallensouls/Pandora/errs"
-	"github.com/Fallensouls/Pandora/util/csvutil"
+	"github.com/go-pandora/core/errs"
+	"github.com/go-pandora/core/util/csvutil"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
+	"log"
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	cleanData()
+	m.Run()
+	cleanData()
+}
+
+func cleanData() {
+	_, err := engine.Exec("truncate `users` restart identity")
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func TestUser_AddUser(t *testing.T) {
-	records, err := csvutil.GetTestData("test/user_test.csv")
+	records, err := csvutil.GetTestData("../test/user_test.csv")
 	if err != nil {
 		t.Fatal("no test data")
 	}
@@ -69,4 +84,76 @@ func TestUser_GetUser(t *testing.T) {
 	assert.Nil(new(User).GetUser(users[1].Id))
 	assert.Equal(errs.ErrUserNotFound, new(User).GetUser(0))
 
+}
+
+func TestUser_UpdateUserProfile(t *testing.T) {
+	email := "pandora@gamil.com"
+	user := User{Username: "pandora", Password: "pandora", Age: 20, Email: &email, Description: "I am a programmer.",
+		Gender: Male}
+
+	if _, err := engine.Table("users").Insert(&user); err != nil {
+		t.Fatal(err)
+	}
+	user.Gender = Female
+	user.Description = "I am a farmer."
+	email = "pandora@qq.com"
+	user.Email = &email
+	if err := user.UpdateUserProfile(user.Id); err != nil {
+		t.Error(err)
+	}
+
+	var updateUser User
+	if _, err := engine.Table("users").ID(user.Id).Get(&updateUser); err != nil {
+		t.Error(err)
+	}
+
+	assert := assert.New(t)
+	assert.Equal(user.Gender, updateUser.Gender)
+	assert.Equal(user.Description, updateUser.Description)
+	assert.NotEqual(user.Email, updateUser.Email) // email address won't be changed.
+}
+
+func TestUser_Login(t *testing.T) {
+	email1 := "Pandora3@gmail.com"
+	email2 := "Pandora4@gmail.com"
+	cellphone1 := "13343643535"
+	cellphone2 := "13347674645"
+
+	users := []*User{
+		{Username: "Pandora1", Password: "Pandora&", Email: &email1, Status: Inactive},
+		{Username: "Pandora2", Password: "pandora^-", Cellphone: &cellphone1, Status: Normal},
+		{Username: "Pandora1", Password: "Pandora&", Email: &email2, Status: Restricted},
+		{Username: "Pandora2", Password: "pandora^-", Cellphone: &cellphone2, Status: Banned},
+	}
+
+	for _, user := range users {
+		hash, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		user.Password = string(hash)
+		if _, err := engine.Table("users").Insert(user); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	loginUsers := []User{
+		{Email: &email1, Password: "Pandora&"},
+		{Email: &email2, Password: "Pandora&"},
+		{Cellphone: &cellphone1, Password: "pandora^-"},
+		{Cellphone: &cellphone2, Password: "pandora^-"},
+	}
+
+	var e []error
+	for _, loginUser := range loginUsers {
+		err := loginUser.Login()
+		e = append(e, err)
+	}
+
+	assert := assert.New(t)
+	assert.Equal(errs.ErrUserInactive, e[0])
+	assert.Nil(e[1])
+	assert.Nil(e[2])
+	assert.Equal(errs.ErrUserBanned, e[3])
+
+	incorrectUser := User{Email: &email2, Password: "aaaaaaaa"}
+	err := incorrectUser.Login()
+	assert.Equal(errs.ErrWrongPassword, err)
 }
